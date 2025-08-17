@@ -62,10 +62,58 @@
             "maximum": 10
           }
         },
-        "required": ["showtimeId", "quantity"]
+                "required": ["showtimeId", "quantity"]
+        }
+      },
+      {
+        "name": "book_tickets",
+        "description": "Book AMC tickets using user credentials via Playwright automation",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              description: "User's AMC account email address"
+            },
+            "password": {
+              "type": "string",
+              description: "User's AMC account password"
+            },
+            "theaterId": {
+              "type": "string",
+              description: "Theater ID to book tickets at"
+            },
+            "showtimeId": {
+              "type": "string",
+              description: "Showtime ID to book tickets for"
+            },
+            "seatCount": {
+              "type": "number",
+              description: "Number of tickets to book (1-10)",
+              "minimum": 1,
+              "maximum": 10
+            },
+            "seatPreferences": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "string",
+                  "enum": ["front", "middle", "back"],
+                  description: "Preferred row location"
+                },
+                "position": {
+                  "type": "string",
+                  "enum": ["aisle", "center"],
+                  description: "Preferred seat position"
+                }
+              },
+              description: "Optional seat preferences"
+            }
+          },
+          "required": ["email", "password", "theaterId", "showtimeId", "seatCount"]
+        }
       }
-    }
-  ],
+    ],
   "endpoints": {
     "baseUrl": "http://localhost:3000",
     "tools": "/tools",

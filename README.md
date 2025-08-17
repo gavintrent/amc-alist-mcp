@@ -1,24 +1,25 @@
-# 🎬 AMC MCP Server
+# AMC MCP Server
 
 An MCP (Model Context Protocol) server that integrates with AMC Theatres APIs to expose structured tools for LLMs like ChatGPT, Claude, and LangChain agents.
 
-## 🚀 Features
+## Features
 
 - **List Movies**: Get currently playing movies at AMC theaters
 - **Find Theaters**: Locate AMC theaters near a specific ZIP code
 - **Showtimes**: Get showtimes for any theater on a specific date
 - **Ticket Reservations**: Stub implementation for future e-commerce integration
+- **Automated Ticket Booking**: **NEW!** Book tickets using Playwright browser automation
 - **MCP Compliant**: Follows Model Context Protocol best practices
 - **TypeScript**: Built with strict typing and modern ES2022 features
 - **Docker Ready**: Containerized for easy deployment
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 - Node.js 18+ 
 - AMC API key from [AMC Developer Portal](https://developer.amctheatres.com)
 - npm or yarn package manager
 
-## 📦 Installation
+## Installation
 
 1. **Clone the repository**
    ```bash
@@ -43,7 +44,7 @@ An MCP (Model Context Protocol) server that integrates with AMC Theatres APIs to
    NODE_ENV=development
    ```
 
-## 🏃‍♂️ Running the Server
+## Running the Server
 
 ### Development Mode
 ```bash
@@ -65,7 +66,7 @@ docker build -t amc-mcp-server .
 docker run -p 3000:3000 --env-file .env amc-mcp-server
 ```
 
-## 🧪 Testing the API
+## Testing the API
 
 ### Health Check
 ```bash
@@ -98,7 +99,24 @@ curl -X POST http://localhost:3000/tools/list_showtimes \
   -d '{"theaterId": "123", "date": "2024-01-15"}'
 ```
 
-## 🔧 MCP Integration
+### Book Tickets (NEW!)
+```bash
+curl -X POST http://localhost:3000/tools/book_tickets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "userpassword",
+    "theaterId": "123",
+    "showtimeId": "456",
+    "seatCount": 2,
+    "seatPreferences": {
+      "row": "middle",
+      "position": "aisle"
+    }
+  }'
+```
+
+## MCP Integration
 
 ### Manifest
 The server provides a manifest at `/manifest.json` for MCP autodiscovery:
@@ -127,7 +145,7 @@ The server provides a manifest at `/manifest.json` for MCP autodiscovery:
 3. Add your server URL: `http://localhost:3000`
 4. The tools will be automatically discovered and available
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 amc-mcp/
@@ -142,7 +160,7 @@ amc-mcp/
 └── tsconfig.json         # TypeScript configuration
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -153,8 +171,9 @@ amc-mcp/
 | `/tools/list_theaters` | POST | Find theaters by ZIP code |
 | `/tools/list_showtimes` | POST | Get showtimes for theater/date |
 | `/tools/reserve_tickets` | POST | Reserve tickets (stub) |
+| `/tools/book_tickets` | POST | **NEW!** Book tickets with Playwright automation |
 
-## 📊 Data Models
+## Data Models
 
 ### Movie
 ```typescript
@@ -203,7 +222,7 @@ interface AMCShowtime {
 }
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Render
 1. Connect your GitHub repository
@@ -221,7 +240,7 @@ flyctl deploy
 2. Push Docker image
 3. Configure environment variables
 
-## 🔒 Security
+## Security
 
 - **API Key**: Stored in environment variables
 - **CORS**: Configurable for production
@@ -229,7 +248,7 @@ flyctl deploy
 - **Input Validation**: Zod schema validation
 - **Rate Limiting**: Respects AMC API limits
 
-## 🧪 Development
+## Development
 
 ### Available Scripts
 - `npm run dev` - Start development server
@@ -245,7 +264,7 @@ flyctl deploy
 4. Add to tool definitions
 5. Update manifest
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -253,21 +272,21 @@ flyctl deploy
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📝 License
+## License
 
 MIT License - see LICENSE file for details
 
-## 🆘 Support
+## Support
 
 - Check the `/health` endpoint for server status
 - Validate your API key at `/validate`
 - Review logs for detailed error information
 - Ensure your AMC API key has proper permissions
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
-- [ ] User authentication and loyalty integration
-- [ ] Seat map selection
+- [x] **User authentication and loyalty integration** - Implemented with Playwright
+- [x] **Seat map selection** - Implemented with automated seat picking
 - [ ] Real-time ticket availability
 - [ ] Push notifications for new releases
 - [ ] Integration with LangChain agents

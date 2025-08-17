@@ -94,6 +94,19 @@ app.post('/tools/reserve_tickets', async (req, res) => {
   }
 });
 
+app.post('/tools/book_tickets', async (req, res) => {
+  try {
+    const result = await mcpTools.bookTickets(req.body);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error in book_tickets:', error);
+    res.status(400).json({
+      error: error.error || 'UNKNOWN_ERROR',
+      message: error.message || 'An unknown error occurred'
+    });
+  }
+});
+
 // MCP manifest endpoint
 app.get('/manifest.json', (req, res) => {
   res.json({
@@ -151,11 +164,11 @@ async function startServer() {
     console.log('AMC API key validated successfully');
 
     app.listen(PORT, () => {
-      console.log(`🚀 AMC MCP Server running on port ${PORT}`);
-      console.log(`📋 Health check: http://localhost:${PORT}/health`);
-      console.log(`📋 MCP Manifest: http://localhost:${PORT}/manifest.json`);
-      console.log(`🔑 API Validation: http://localhost:${PORT}/validate`);
-      console.log(`🎬 Available tools:`);
+      console.log(`AMC MCP Server running on port ${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/health`);
+      console.log(`MCP Manifest: http://localhost:${PORT}/manifest.json`);
+      console.log(`API Validation: http://localhost:${PORT}/validate`);
+      console.log(`Available tools:`);
       mcpTools.getToolDefinitions().forEach(tool => {
         console.log(`   - ${tool.name}: ${tool.description}`);
       });

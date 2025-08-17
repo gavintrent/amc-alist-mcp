@@ -79,6 +79,41 @@ export interface ReserveTicketsOutput {
   message: string;
 }
 
+// New booking types for Playwright automation
+export interface BookTicketsInput {
+  email: string;
+  password: string;
+  theaterId: string;
+  showtimeId: string;
+  seatCount: number;
+  seatPreferences?: {
+    row?: 'front' | 'middle' | 'back';
+    position?: 'aisle' | 'center';
+  };
+}
+
+export interface BookTicketsOutput {
+  success: boolean;
+  confirmationNumber?: string;
+  errorMessage?: string;
+  bookingDetails?: {
+    movieTitle: string;
+    theaterName: string;
+    showtime: string;
+    seats: string[];
+    totalPrice: number;
+  };
+}
+
+// Playwright session management
+export interface UserSession {
+  userId: string;
+  email: string;
+  sessionToken?: string;
+  lastLogin: Date;
+  isActive: boolean;
+}
+
 // Error Types
 export interface AMCError {
   code: string;

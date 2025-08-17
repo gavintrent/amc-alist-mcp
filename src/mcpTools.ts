@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AMCClient } from './amcClient';
+import { PlaywrightBookingService } from './playwrightBookingService';
 import {
   ListTheatersInput,
   ListTheatersOutput,
@@ -9,6 +10,8 @@ import {
   ListShowtimesOutput,
   ReserveTicketsInput,
   ReserveTicketsOutput,
+  BookTicketsInput,
+  BookTicketsOutput,
   MCPError
 } from './types';
 
@@ -27,11 +30,25 @@ const ReserveTicketsSchema = z.object({
   quantity: z.number().int().positive().max(10, 'Maximum 10 tickets per reservation')
 });
 
+const BookTicketsSchema = z.object({
+  email: z.string().email('Valid email address is required'),
+  password: z.string().min(1, 'Password is required'),
+  theaterId: z.string().min(1, 'Theater ID is required'),
+  showtimeId: z.string().min(1, 'Showtime ID is required'),
+  seatCount: z.number().int().positive().max(10, 'Maximum 10 tickets per booking'),
+  seatPreferences: z.object({
+    row: z.enum(['front', 'middle', 'back']).optional(),
+    position: z.enum(['aisle', 'center']).optional()
+  }).optional()
+});
+
 export class MCPTools {
   private amcClient: AMCClient;
+  private playwrightService: PlaywrightBookingService;
 
   constructor(amcClient: AMCClient) {
     this.amcClient = amcClient;
+    this.playwrightService = new PlaywrightBookingService();
   }
 
   /**
@@ -202,6 +219,50 @@ export class MCPTools {
   }
 
   /**
+   * Book tickets using Playwright automation
+   * 
+   * @param input - Input parameters for ticket booking
+   * @param input.email - User's AMC account email
+   * @param input.password - User's AMC account password
+   * @param input.theaterId - Theater ID to book tickets at
+   * @param input.showtimeId - Showtime ID to book tickets for
+   * @param input.seatCount - Number of tickets to book (1-10)
+   * @param input.seatPreferences - Optional seat preferences (row, position)
+   * @returns Promise<BookTicketsOutput> - Booking result with confirmation or error
+   * 
+   * @example
+   * ```json
+   * {
+   *   "email": "user@example.com",
+   *   "password": "userpassword",
+   *   "theaterId": "123",
+   *   "showtimeId": "456",
+   *   "seatCount": 2,
+   *   "seatPreferences": {
+   *     "row": "middle",
+   *     "position": "aisle"
+   *   }
+   * }
+   * ```
+   */
+  async bookTickets(input: BookTicketsInput): Promise<BookTicketsOutput> {
+    try {
+      // Validate input
+      const validatedInput = BookTicketsSchema.parse(input);
+      
+      // Use Playwright service to automate the booking process
+      const result = await this.playwrightService.bookTickets(validatedInput);
+      
+      return result;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw this.createMCPError('VALIDATION_ERROR', 'Invalid input parameters', error.message);
+      }
+      throw this.createMCPError('BOOKING_ERROR', 'Failed to book tickets', error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
+
+  /**
    * Get tool definitions for MCP manifest
    */
   getToolDefinitions() {
@@ -266,6 +327,54 @@ export class MCPTools {
             }
           },
           required: ['showtimeId', 'quantity']
+        }
+      },
+      {
+        name: 'book_tickets',
+        description: 'Book AMC tickets using user credentials via Playwright automation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            email: {
+              type: 'string',
+              description: 'User\'s AMC account email address'
+            },
+            password: {
+              type: 'string',
+              description: 'User\'s AMC account password'
+            },
+            theaterId: {
+              type: 'string',
+              description: 'Theater ID to book tickets at'
+            },
+            showtimeId: {
+              type: 'string',
+              description: 'Showtime ID to book tickets for'
+            },
+            seatCount: {
+              type: 'number',
+              description: 'Number of tickets to book (1-10)',
+              minimum: 1,
+              maximum: 10
+            },
+            seatPreferences: {
+              type: 'object',
+              properties: {
+                row: {
+                  type: 'string',
+                  enum: ['front', 'middle', 'back'],
+                  description: 'Preferred row location'
+                },
+                position: {
+                  type: 'string',
+                  enum: ['aisle', 'center'],
+                  description: 'Preferred seat position'
+                }
+              },
+              description: 'Optional seat preferences'
+            }
+          },
+          required: ['email', 'password', 'theaterId', 'showtimeId', 'seatCount']
         }
       }
     ];

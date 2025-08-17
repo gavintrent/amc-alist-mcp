@@ -35,3 +35,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Centralized AMC API interactions
 - Modular, functional design
 - Production-ready Docker configuration
+
+## [0.2.0] - 2024-01-15
+
+### Added
+- **Playwright-based ticket booking functionality** (`playwrightBookingService.ts`)
+- New MCP tool: `book_tickets` for automated ticket booking
+- User authentication handling for AMC accounts
+- Browser automation for seat selection and booking completion
+- Session management for user credentials
+- Enhanced input validation with seat preferences
+- Comprehensive error handling for booking automation
+
+### Features
+- `book_tickets` - Automated ticket booking using Playwright
+- User login and authentication
+- Seat selection with preferences (row, position)
+- Booking confirmation and details extraction
+- Session persistence for improved user experience
+
+### Technical Details
+- Playwright browser automation in headless mode
+- Secure credential handling (no password logging)
+- Robust error handling for web automation failures
+- Modular booking service architecture
+- Integration with existing MCP tools structure
