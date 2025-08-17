@@ -1,0 +1,84 @@
+{
+  "name": "amc-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for AMC Theatres APIs - provides tools for listing movies, theaters, showtimes, and reserving tickets",
+  "tools": [
+    {
+      "name": "list_theaters",
+      "description": "Find AMC theaters near a specific ZIP code",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "zip": {
+            "type": "string",
+            "description": "ZIP code to search for theaters near",
+            "pattern": "^\\d{5}(-\\d{4})?$"
+          }
+        },
+        "required": ["zip"]
+      }
+    },
+    {
+      "name": "list_movies",
+      "description": "List currently playing movies at AMC theaters",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "list_showtimes",
+      "description": "Get showtimes for a specific theater on a given date",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "theaterId": {
+            "type": "string",
+            "description": "Theater ID to get showtimes for"
+          },
+          "date": {
+            "type": "string",
+            "description": "Date in YYYY-MM-DD format"
+          }
+        },
+        "required": ["theaterId", "date"]
+      }
+    },
+    {
+      "name": "reserve_tickets",
+      "description": "Reserve tickets for a showtime (stub implementation for future use)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "showtimeId": {
+            "type": "string",
+            "description": "Showtime ID to reserve tickets for"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Number of tickets to reserve (max 10)",
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": ["showtimeId", "quantity"]
+      }
+    }
+  ],
+  "endpoints": {
+    "baseUrl": "http://localhost:3000",
+    "tools": "/tools",
+    "manifest": "/manifest.json",
+    "health": "/health",
+    "validation": "/validate"
+  },
+  "capabilities": {
+    "authentication": {
+      "type": "api_key",
+      "header": "X-AMC-Vendor-Key"
+    },
+    "rate_limiting": "Standard AMC API limits apply",
+    "pagination": "Supported for large result sets"
+  }
+} 
