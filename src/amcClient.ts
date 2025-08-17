@@ -58,14 +58,14 @@ export class AMCClient {
   }
 
   /**
-   * Get theaters near a specific ZIP code
+   * Get theaters near a specific ZIP code, and optionally a radius
    */
-  async getTheatersByZip(zip: string): Promise<AMCTheater[]> {
+  async getTheatersByZip(zip: string, rad: number = 25): Promise<AMCTheater[]> {
     try {
       const response = await this.client.get<AMCApiResponse<AMCTheater[]>>('/theaters', {
         params: {
           zipCode: zip,
-          radius: 25 // 25 mile radius
+          radius: rad // default to 25 mile radius
         }
       });
       return response.data.data || [];

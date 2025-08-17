@@ -380,8 +380,8 @@ export class MCPTools {
     ];
   }
 
-  private createMCPError(error: string, message: string, details?: string): MCPError {
-    return {
+  private createMCPError(error: string, message: string, details?: string): never {
+    throw {
       error,
       message,
       code: details
