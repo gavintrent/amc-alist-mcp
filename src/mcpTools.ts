@@ -36,6 +36,17 @@ export class MCPTools {
 
   /**
    * List theaters near a ZIP code
+   * 
+   * @param input - Input parameters for theater search
+   * @param input.zip - ZIP code to search for theaters near (format: 5-digit or 9-digit with hyphen)
+   * @returns Promise<ListTheatersOutput> - List of theaters with total count
+   * 
+   * @example
+   * ```json
+   * {
+   *   "zip": "90210"
+   * }
+   * ```
    */
   async listTheaters(input: ListTheatersInput): Promise<ListTheatersOutput> {
     try {
@@ -65,6 +76,14 @@ export class MCPTools {
 
   /**
    * List now-playing movies
+   * 
+   * @param input - Input parameters for movie search (no parameters required)
+   * @returns Promise<ListMoviesOutput> - List of currently playing movies with total count
+   * 
+   * @example
+   * ```json
+   * {}
+   * ```
    */
   async listMovies(input: ListMoviesInput): Promise<ListMoviesOutput> {
     try {
@@ -90,6 +109,19 @@ export class MCPTools {
 
   /**
    * List showtimes for a theater on a specific date
+   * 
+   * @param input - Input parameters for showtime search
+   * @param input.theaterId - Theater ID to get showtimes for
+   * @param input.date - Date in YYYY-MM-DD format (e.g., "2024-01-15")
+   * @returns Promise<ListShowtimesOutput> - List of showtimes with theater info and total count
+   * 
+   * @example
+   * ```json
+   * {
+   *   "theaterId": "123",
+   *   "date": "2024-01-15"
+   * }
+   * ```
    */
   async listShowtimes(input: ListShowtimesInput): Promise<ListShowtimesOutput> {
     try {
@@ -132,6 +164,22 @@ export class MCPTools {
 
   /**
    * Reserve tickets (stub implementation for future use)
+   * 
+   * @param input - Input parameters for ticket reservation
+   * @param input.showtimeId - Showtime ID to reserve tickets for
+   * @param input.quantity - Number of tickets to reserve (1-10)
+   * @returns Promise<ReserveTicketsOutput> - Reservation status with ID and message
+   * 
+   * @example
+   * ```json
+   * {
+   *   "showtimeId": "456",
+   *   "quantity": 2
+   * }
+   * ```
+   * 
+   * @note This is a stub implementation. Actual reservation functionality will be added
+   * when AMC grants e-commerce access.
    */
   async reserveTickets(input: ReserveTicketsInput): Promise<ReserveTicketsOutput> {
     try {
