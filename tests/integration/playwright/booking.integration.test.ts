@@ -91,7 +91,7 @@ describe('Playwright Booking Integration Tests', () => {
         // Don't fail the test if login fails (credentials might be wrong)
         expect(true).toBe(true);
       } catch (error) {
-        console.log(`Login test encountered error: ${error.message}`);
+        console.log(`Login test encountered error: ${(error as Error).message}`);
         // Don't fail the test - this might be expected with wrong credentials
         expect(true).toBe(true);
       } finally {
@@ -134,7 +134,7 @@ describe('Playwright Booking Integration Tests', () => {
         
         expect(true).toBe(true);
       } catch (error) {
-        console.log(`Theater search test encountered error: ${error.message}`);
+        console.log(`Theater search test encountered error: ${(error as Error).message}`);
         expect(true).toBe(true);
       } finally {
         await page!.close();
@@ -188,7 +188,7 @@ describe('Playwright Booking Integration Tests', () => {
         }
         
       } catch (error) {
-        console.log(`Dry run encountered error: ${error.message}`);
+        console.log(`Dry run encountered error: ${(error as Error).message}`);
         // Don't fail the test - this might be expected
         expect(true).toBe(true);
       }
@@ -231,7 +231,7 @@ describe('Playwright Booking Integration Tests', () => {
         
         expect(true).toBe(true);
       } catch (error) {
-        console.log(`Session management test encountered error: ${error.message}`);
+        console.log(`Session management test encountered error: ${(error as Error).message}`);
         expect(true).toBe(true);
       } finally {
         await page!.close();
@@ -241,6 +241,11 @@ describe('Playwright Booking Integration Tests', () => {
 
   describe('Error Scenarios', () => {
     it('should handle invalid credentials gracefully', async () => {
+      if (!testEmail || !testPassword) {
+        console.warn('Skipping test - no credentials');
+        return;
+      }
+
       const page = await bookingService['browser']?.newPage();
       expect(page).toBeDefined();
 
@@ -269,7 +274,7 @@ describe('Playwright Booking Integration Tests', () => {
         
         expect(true).toBe(true);
       } catch (error) {
-        console.log(`Invalid credentials test encountered error: ${error.message}`);
+        console.log(`Invalid credentials test encountered error: ${(error as Error).message}`);
         expect(true).toBe(true);
       } finally {
         await page!.close();
@@ -277,6 +282,11 @@ describe('Playwright Booking Integration Tests', () => {
     }, 30000);
 
     it('should handle network timeouts gracefully', async () => {
+      if (!testEmail || !testPassword) {
+        console.warn('Skipping test - no credentials');
+        return;
+      }
+
       const page = await bookingService['browser']?.newPage();
       expect(page).toBeDefined();
 
@@ -287,7 +297,7 @@ describe('Playwright Booking Integration Tests', () => {
         try {
           await page!.goto('https://www.amctheatres.com');
         } catch (timeoutError) {
-          console.log(`Network timeout handled gracefully: ${timeoutError.message}`);
+          console.log(`Network timeout handled gracefully: ${(timeoutError as Error).message}`);
         }
         
         expect(true).toBe(true);
