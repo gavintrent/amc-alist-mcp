@@ -381,10 +381,9 @@ export class MCPTools {
   }
 
   private createMCPError(error: string, message: string, details?: string): never {
-    throw {
-      error,
-      message,
-      code: details
-    };
+    const mcpError = new Error(message);
+    (mcpError as any).error = error;
+    (mcpError as any).code = details;
+    throw mcpError;
   }
 } 

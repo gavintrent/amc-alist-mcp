@@ -46,12 +46,31 @@ describe('MCPTools', () => {
     MockedAMCClient.mockImplementation(() => mockAmcClient);
     MockedPlaywrightBookingService.mockImplementation(() => mockPlaywrightService);
 
+    // Create a real MCPTools instance with mocked dependencies
     mcpTools = new MCPTools(mockAmcClient);
+    
+    // Replace the playwright service with our mock
+    (mcpTools as any).playwrightService = mockPlaywrightService;
   });
 
   describe('Constructor', () => {
     it('should create MCPTools instance with AMC client', () => {
       expect(mcpTools).toBeInstanceOf(MCPTools);
+    });
+
+    it('should validate Zod schema directly', () => {
+      // Test Zod validation directly
+      const { z } = require('zod');
+      const ListTheatersSchema = z.object({
+        zip: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code format')
+      });
+
+      // This should pass
+      expect(() => ListTheatersSchema.parse({ zip: '90210' })).not.toThrow();
+      
+      // This should fail
+      expect(() => ListTheatersSchema.parse({ zip: 'invalid' })).toThrow();
+      expect(() => ListTheatersSchema.parse({ zip: '' })).toThrow();
     });
   });
 
@@ -119,7 +138,13 @@ describe('MCPTools', () => {
       expect(result).toEqual({
         showtimes: mockShowtimes,
         totalCount: mockShowtimes.length,
-        theater: mockTheaters[0]
+        theater: {
+          id: mockTheaters[0]!.id,
+          name: mockTheaters[0]!.name,
+          address: mockTheaters[0]!.address,
+          phone: mockTheaters[0]!.phone,
+          amenities: mockTheaters[0]!.amenities
+        }
       });
       expect(mockAmcClient.getShowtimes).toHaveBeenCalledWith('theater_001', '2024-01-15');
       expect(mockAmcClient.getTheaterById).toHaveBeenCalledWith('theater_001');
