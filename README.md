@@ -160,6 +160,49 @@ amc-mcp/
 └── tsconfig.json         # TypeScript configuration
 ```
 
+## Testing
+
+### Unit Tests
+Run the comprehensive unit test suite:
+```bash
+npm test
+npm run test:unit
+```
+
+### Integration Tests
+The project includes integration tests that test real AMC APIs and website interactions:
+
+**Prerequisites:**
+- Valid AMC API key for API tests
+- Valid AMC account credentials for Playwright tests
+- Playwright browsers installed
+
+**Setup:**
+```bash
+# Install Playwright browsers
+npx playwright install
+
+# Create .env file with your credentials
+cp env.example .env
+# Edit .env with your real credentials
+```
+
+**Running Integration Tests:**
+```bash
+# Run all integration tests
+npm run test:integration
+
+# Run specific test categories
+npm run test:integration:api        # API integration tests
+npm run test:integration:playwright # Browser automation tests
+npm run test:integration:e2e        # End-to-end server tests
+
+# Use the convenience script
+./tests/integration/run-integration-tests.sh
+```
+
+**Note:** Integration tests require real credentials and will make actual API calls and browser interactions. See `tests/integration/HOW_TO_RUN.md` for detailed instructions.
+
 ## API Endpoints
 
 | Endpoint | Method | Description |

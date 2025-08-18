@@ -179,6 +179,9 @@ async function startServer() {
   }
 }
 
+// Export app for testing purposes
+export { app };
+
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
