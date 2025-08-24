@@ -46,26 +46,6 @@ describe('AMC Client Integration Tests', () => {
       console.log(`Found ${movies.length} movies playing now`);
       console.log(`First movie: ${firstMovie.title} (${firstMovie.releaseDate})`);
     }, 15000);
-
-    it('should search for movies by title', async () => {
-      if (!apiKey) {
-        console.warn('Skipping test - no API key');
-        return;
-      }
-
-      const searchResults = await amcClient.searchMovies('Avengers');
-      
-      expect(Array.isArray(searchResults)).toBe(true);
-      expect(searchResults.length).toBeGreaterThan(0);
-      
-      // Should find movies with "Avengers" in title
-      const hasAvengers = searchResults.some(movie => 
-        movie.title.toLowerCase().includes('avengers')
-      );
-      expect(hasAvengers).toBe(true);
-      
-      console.log(`Found ${searchResults.length} movies matching "Avengers"`);
-    }, 15000);
   });
 
   describe('Theaters API', () => {

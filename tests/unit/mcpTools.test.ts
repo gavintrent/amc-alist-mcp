@@ -34,7 +34,6 @@ describe('MCPTools', () => {
       getShowtimes: jest.fn(),
       getTheaterById: jest.fn(),
       getMovieById: jest.fn(),
-      searchMovies: jest.fn(),
       validateApiKey: jest.fn()
     } as any;
 

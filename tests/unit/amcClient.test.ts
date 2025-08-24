@@ -20,7 +20,7 @@ mockAxios.create.mockReturnValue(mockAxiosClient);
 
 describe('AMCClient', () => {
   let amcClient: AMCClient;
-  const testApiKey = 'test_api_key_123';
+  const testApiKey = 'A036EFEB-947A-41DB-B907-F5902C3EEBBB';
 
   beforeEach(() => {
     // Don't clear all mocks, just reset the specific mock client
@@ -58,7 +58,9 @@ describe('AMCClient', () => {
     it('should fetch now playing movies successfully', async () => {
       const mockResponse = {
         data: {
-          data: mockMovies,
+          _embedded: {
+            movies: mockMovies
+          },
           pagination: {
             page: 1,
             limit: 10,
@@ -84,8 +86,22 @@ describe('AMCClient', () => {
       });
     });
 
+    it('should handle fallback response format', async () => {
+      const mockResponse = {
+        data: {
+          movies: mockMovies
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getNowPlayingMovies();
+      
+      expect(result).toEqual(mockMovies);
+    });
+
     it('should handle empty response', async () => {
-      const mockResponse = { data: { data: [] } };
+      const mockResponse = { data: { _embedded: { movies: [] } } };
       
       mockAxiosClient.get.mockResolvedValue(mockResponse);
 
@@ -95,39 +111,136 @@ describe('AMCClient', () => {
   });
 
   describe('getTheatersByZip', () => {
-    it('should fetch theaters by ZIP code successfully', async () => {
-      const mockResponse = {
+    it('should fetch theaters by ZIP code using location-based approach successfully', async () => {
+      // Mock location suggestions response
+      const mockLocationResponse = {
         data: {
-          data: mockTheaters,
-          pagination: {
-            page: 1,
-            limit: 10,
-            total: mockTheaters.length,
-            totalPages: 1
-          }
+          locations: [
+            {
+              latitude: 34.0522,
+              longitude: -118.2437
+            }
+          ]
         }
       };
 
-      mockAxiosClient.get.mockResolvedValue(mockResponse);
+      // Mock theaters response
+      const mockTheatersResponse = {
+        data: {
+          theatres: mockTheaters
+        }
+      };
+
+      mockAxiosClient.get
+        .mockResolvedValueOnce(mockLocationResponse)
+        .mockResolvedValueOnce(mockTheatersResponse);
 
       const result = await amcClient.getTheatersByZip('90210');
       
       expect(result).toEqual(mockTheaters);
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/location-suggestions', {
+        params: { query: '90210' }
+      });
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/locations', {
+        params: {
+          longitude: -118.2437,
+          latitude: 34.0522
+        }
+      });
     });
 
-    it('should pass correct parameters to API', async () => {
-      const mockGet = jest.fn().mockResolvedValue({
-        data: { data: mockTheaters }
-      });
+    it('should fallback to general theatres endpoint when location lookup fails', async () => {
+      // Mock location suggestions response with no coordinates
+      const mockLocationResponse = {
+        data: {
+          locations: []
+        }
+      };
 
-      mockAxiosClient.get.mockImplementation(mockGet);
+      // Mock fallback theatres response
+      const mockTheatersResponse = {
+        data: {
+          theatres: mockTheaters
+        }
+      };
 
-      await amcClient.getTheatersByZip('90210');
+      mockAxiosClient.get
+        .mockResolvedValueOnce(mockLocationResponse)
+        .mockResolvedValueOnce(mockTheatersResponse);
+
+      const result = await amcClient.getTheatersByZip('90210');
       
-      expect(mockGet).toHaveBeenCalledWith('/theaters', {
+      expect(result).toEqual(mockTheaters);
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/theatres', {
         params: {
           zipCode: '90210',
           radius: 25
+        }
+      });
+    });
+
+    it('should fallback to general theatres endpoint when location has no coordinates', async () => {
+      // Mock location suggestions response with location but no coordinates
+      const mockLocationResponse = {
+        data: {
+          locations: [
+            {
+              // No latitude/longitude
+            }
+          ]
+        }
+      };
+
+      // Mock fallback theatres response
+      const mockTheatersResponse = {
+        data: {
+          theatres: mockTheaters
+        }
+      };
+
+      mockAxiosClient.get
+        .mockResolvedValueOnce(mockLocationResponse)
+        .mockResolvedValueOnce(mockTheatersResponse);
+
+      const result = await amcClient.getTheatersByZip('90210');
+      
+      expect(result).toEqual(mockTheaters);
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/theatres', {
+        params: {
+          zipCode: '90210',
+          radius: 25
+        }
+      });
+    });
+
+    it('should use custom radius when provided', async () => {
+      const mockLocationResponse = {
+        data: {
+          locations: [
+            {
+              latitude: 34.0522,
+              longitude: -118.2437
+            }
+          ]
+        }
+      };
+
+      const mockTheatersResponse = {
+        data: {
+          theatres: mockTheaters
+        }
+      };
+
+      mockAxiosClient.get
+        .mockResolvedValueOnce(mockLocationResponse)
+        .mockResolvedValueOnce(mockTheatersResponse);
+
+      await amcClient.getTheatersByZip('90210', 50);
+      
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/locations', {
+        params: {
+          longitude: -118.2437,
+          latitude: 34.0522
         }
       });
     });
@@ -137,7 +250,7 @@ describe('AMCClient', () => {
     it('should fetch showtimes successfully', async () => {
       const mockResponse = {
         data: {
-          data: mockShowtimes,
+          showtimes: mockShowtimes,
           pagination: {
             page: 1,
             limit: 10,
@@ -156,18 +269,30 @@ describe('AMCClient', () => {
 
     it('should pass correct parameters to API', async () => {
       const mockGet = jest.fn().mockResolvedValue({
-        data: { data: mockShowtimes }
+        data: { showtimes: mockShowtimes }
       });
 
       mockAxiosClient.get.mockImplementation(mockGet);
 
       await amcClient.getShowtimes('theater_001', '2024-01-15');
       
-      expect(mockGet).toHaveBeenCalledWith('/theaters/theater_001/showtimes', {
-        params: {
-          date: '2024-01-15'
-        }
+      expect(mockGet).toHaveBeenCalledWith('/v2/theatres/theater_001/showtimes/2024-01-15', {
+        params: {}
       });
+    });
+
+    it('should handle fallback response format', async () => {
+      const mockResponse = {
+        data: {
+          data: mockShowtimes
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getShowtimes('theater_001', '2024-01-15');
+      
+      expect(result).toEqual(mockShowtimes);
     });
   });
 
@@ -191,7 +316,7 @@ describe('AMCClient', () => {
 
       await amcClient.getTheaterById('theater_001');
       
-      expect(mockGet).toHaveBeenCalledWith('/theaters/theater_001');
+      expect(mockGet).toHaveBeenCalledWith('/v2/theatres/theater_001');
     });
   });
 
@@ -215,45 +340,7 @@ describe('AMCClient', () => {
 
       await amcClient.getMovieById('movie_001');
       
-      expect(mockGet).toHaveBeenCalledWith('/movies/movie_001');
-    });
-  });
-
-  describe('searchMovies', () => {
-    it('should search movies successfully', async () => {
-      const mockResponse = {
-        data: {
-          data: mockMovies,
-          pagination: {
-            page: 1,
-            limit: 10,
-            total: mockMovies.length,
-            totalPages: 1
-          }
-        }
-      };
-
-      mockAxiosClient.get.mockResolvedValue(mockResponse);
-
-      const result = await amcClient.searchMovies('Dune');
-      
-      expect(result).toEqual(mockMovies);
-    });
-
-    it('should pass search query to API', async () => {
-      const mockGet = jest.fn().mockResolvedValue({
-        data: { data: mockMovies }
-      });
-
-      mockAxiosClient.get.mockImplementation(mockGet);
-
-      await amcClient.searchMovies('Dune');
-      
-      expect(mockGet).toHaveBeenCalledWith('/movies/search', {
-        params: {
-          q: 'Dune'
-        }
-      });
+      expect(mockGet).toHaveBeenCalledWith('/v2/movies/movie_001');
     });
   });
 
@@ -281,6 +368,128 @@ describe('AMCClient', () => {
       const result = await amcClient.validateApiKey();
       
       expect(result).toBe(false);
+    });
+
+    it('should call correct endpoint for validation', async () => {
+      const mockGet = jest.fn().mockResolvedValue({
+        data: { data: [mockMovies[0]] }
+      });
+
+      mockAxiosClient.get.mockImplementation(mockGet);
+
+      await amcClient.validateApiKey();
+      
+      expect(mockGet).toHaveBeenCalledWith('/v2/movies/views/now-playing', {
+        params: { limit: 1 }
+      });
+    });
+  });
+
+  describe('getComingSoonMovies', () => {
+    it('should fetch coming soon movies successfully', async () => {
+      const mockResponse = {
+        data: {
+          _embedded: {
+            movies: mockMovies
+          }
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getComingSoonMovies();
+      
+      expect(result).toEqual(mockMovies);
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/movies/views/coming-soon');
+    });
+
+    it('should handle fallback response format', async () => {
+      const mockResponse = {
+        data: {
+          movies: mockMovies
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getComingSoonMovies();
+      
+      expect(result).toEqual(mockMovies);
+    });
+
+    it('should handle empty response', async () => {
+      const mockResponse = { data: { _embedded: { movies: [] } } };
+      
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getComingSoonMovies();
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getAdvanceMovies', () => {
+    it('should fetch advance movies successfully', async () => {
+      const mockResponse = {
+        data: {
+          _embedded: {
+            movies: mockMovies
+          }
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getAdvanceMovies();
+      
+      expect(result).toEqual(mockMovies);
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/movies/views/advance');
+    });
+
+    it('should handle fallback response format', async () => {
+      const mockResponse = {
+        data: {
+          movies: mockMovies
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getAdvanceMovies();
+      
+      expect(result).toEqual(mockMovies);
+    });
+  });
+
+  describe('getAllActiveMovies', () => {
+    it('should fetch all active movies successfully', async () => {
+      const mockResponse = {
+        data: {
+          _embedded: {
+            movies: mockMovies
+          }
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getAllActiveMovies();
+      
+      expect(result).toEqual(mockMovies);
+      expect(mockAxiosClient.get).toHaveBeenCalledWith('/v2/movies/views/all/active');
+    });
+
+    it('should handle fallback response format', async () => {
+      const mockResponse = {
+        data: {
+          data: mockMovies
+        }
+      };
+
+      mockAxiosClient.get.mockResolvedValue(mockResponse);
+
+      const result = await amcClient.getAllActiveMovies();
+      
+      expect(result).toEqual(mockMovies);
     });
   });
 

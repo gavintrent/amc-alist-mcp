@@ -8,6 +8,14 @@ describe('Playwright Booking Integration Tests', () => {
   const testEmail = process.env.AMC_TEST_EMAIL;
   const testPassword = process.env.AMC_TEST_PASSWORD;
   const testZip = process.env.AMC_TEST_ZIP || '10001'; // NYC default
+  
+  // Configuration for test mode
+  const isDryRun = process.env.AMC_TEST_DRY_RUN !== 'false'; // Default to dry run for safety
+  const enableRealPurchase = process.env.AMC_TEST_ENABLE_PURCHASE === 'true'; // Must explicitly enable
+  const useAListBenefits = process.env.AMC_TEST_USE_ALIST === 'true'; // Use A-List benefits for free reservations
+  const testCardNumber = process.env.AMC_TEST_CARD_NUMBER;
+  const testCardExpiry = process.env.AMC_TEST_CARD_EXPIRY;
+  const testCardCVV = process.env.AMC_TEST_CARD_CVV;
 
   beforeAll(async () => {
     if (!testEmail || !testPassword) {
@@ -17,6 +25,19 @@ describe('Playwright Booking Integration Tests', () => {
 
     console.log(`Using test account: ${testEmail}`);
     console.log(`Test ZIP code: ${testZip}`);
+    console.log(`Test mode: ${isDryRun ? 'DRY RUN (safe)' : 'LIVE MODE (caution!)'}`);
+    
+    if (useAListBenefits) {
+      console.log('🎬 A-List Mode: Using AMC Stubs A-List benefits for free movie reservations');
+    }
+    
+    if (!isDryRun && enableRealPurchase) {
+      console.log('⚠️  WARNING: Real purchase mode enabled - tests may complete actual transactions!');
+      if (!testCardNumber || !testCardExpiry || !testCardCVV) {
+        console.warn('Real purchase mode enabled but test card details not provided');
+        console.warn('Set AMC_TEST_CARD_NUMBER, AMC_TEST_CARD_EXPIRY, and AMC_TEST_CARD_CVV for live testing');
+      }
+    }
     
     bookingService = new PlaywrightBookingService();
     await bookingService.initialize();
@@ -24,7 +45,11 @@ describe('Playwright Booking Integration Tests', () => {
 
   afterAll(async () => {
     if (bookingService) {
+      console.log('🎬 Test completed, waiting 5 seconds before cleanup...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      console.log('🎬 Cleaning up browser resources...');
       await bookingService.cleanup();
+      console.log('✅ Cleanup completed');
     }
   });
 
@@ -142,23 +167,36 @@ describe('Playwright Booking Integration Tests', () => {
     }, 30000);
   });
 
-  describe('Full Booking Flow (Dry Run)', () => {
-    it('should attempt full booking flow without completing purchase', async () => {
+  describe('Full Booking Flow', () => {
+    it('should attempt full booking flow with configurable completion mode', async () => {
       if (!testEmail || !testPassword) {
         console.warn('Skipping test - no credentials');
         return;
       }
 
-      // This is a "dry run" test that goes through the booking process
-      // but stops before actually purchasing tickets
-      console.log(`Starting dry run of full booking flow...`);
+      if (!isDryRun && !enableRealPurchase && !useAListBenefits) {
+        console.log('Skipping test - no completion mode enabled');
+        console.log('Set AMC_TEST_DRY_RUN=false and either AMC_TEST_ENABLE_PURCHASE=true or AMC_TEST_USE_ALIST=true');
+        return;
+      }
+
+      let testMode: string;
+      if (useAListBenefits) {
+        testMode = 'A-LIST RESERVATION';
+      } else if (isDryRun) {
+        testMode = 'DRY RUN';
+      } else {
+        testMode = 'LIVE PURCHASE';
+      }
+      
+      console.log(`Starting ${testMode} of full booking flow...`);
 
       const testInput: BookTicketsInput = {
         email: testEmail,
         password: testPassword,
         theaterId: 'test_theater_id', // We'll need a real theater ID for testing
         showtimeId: 'test_showtime_id', // We'll need a real showtime ID for testing
-        seatCount: 2,
+        seatCount: 1, // A-List allows 3 movies per week, but let's start with 1
         seatPreferences: {
           row: 'middle',
           position: 'center'
@@ -166,18 +204,81 @@ describe('Playwright Booking Integration Tests', () => {
       };
 
       try {
-        // Start the booking process but don't complete it
-        const result = await bookingService.bookTickets(testInput);
-        
-        // Since this is a dry run, we expect it to either succeed
-        // or fail gracefully without completing the purchase
-        expect(result).toBeDefined();
-        expect(typeof result.success).toBe('boolean');
-        
-        if (result.success) {
-          console.log(`Dry run completed successfully: ${result.confirmationNumber || 'No confirmation'}`);
+        if (useAListBenefits) {
+          // A-List Mode: Use free movie reservation benefits
+          console.log('🎬 Executing A-List reservation flow - using free movie benefits');
+          console.log('Flow: Navigate → Find Theater → Choose Movie/Showtime → Select Seat → A-List Checkbox → Complete');
+          
+          const result = await bookingService.bookTicketsWithAList(testInput);
+          
+          expect(result).toBeDefined();
+          expect(typeof result.success).toBe('boolean');
+          
+          if (result.success) {
+            console.log(`🎬 A-List reservation completed successfully!`);
+            console.log(`Confirmation Number: ${result.confirmationNumber || 'N/A'}`);
+            console.log(`Movie: ${result.bookingDetails?.movieTitle || 'N/A'}`);
+            console.log(`Theater: ${result.bookingDetails?.theaterName || 'N/A'}`);
+            console.log(`Showtime: ${result.bookingDetails?.showtime || 'N/A'}`);
+            console.log(`Seat: ${result.bookingDetails?.seats?.join(', ') || 'N/A'}`);
+            console.log(`Total Price: $0.00 (A-List benefit)`);
+            console.log(`A-List reservation used - no payment required`);
+          } else {
+            console.log(`A-List reservation failed: ${result.errorMessage || 'Unknown error'}`);
+            // This might be expected if A-List benefits are exhausted or invalid
+          }
+        } else if (isDryRun) {
+          // Dry run: Start the booking process but don't complete it
+          console.log('Executing in DRY RUN mode - no actual purchase will be made');
+          
+          const result = await bookingService.bookTickets(testInput);
+          
+          expect(result).toBeDefined();
+          expect(typeof result.success).toBe('boolean');
+          
+          if (result.success) {
+            console.log(`Dry run completed successfully: ${result.confirmationNumber || 'No confirmation'}`);
+          } else {
+            console.log(`Dry run completed with expected failure: ${result.errorMessage || 'Unknown error'}`);
+          }
         } else {
-          console.log(`Dry run completed with expected failure: ${result.errorMessage || 'Unknown error'}`);
+          // Live mode: Actually complete the purchase with credit card
+          console.log('⚠️  EXECUTING IN LIVE MODE - ACTUAL PURCHASE WILL BE COMPLETED!');
+          
+          if (!testCardNumber || !testCardExpiry || !testCardCVV) {
+            throw new Error('Live purchase mode requires test card details (AMC_TEST_CARD_NUMBER, AMC_TEST_CARD_EXPIRY, AMC_TEST_CARD_CVV)');
+          }
+          
+          // Add payment information to the test input
+          const liveTestInput = {
+            ...testInput,
+            paymentMethod: {
+              cardNumber: testCardNumber,
+              expiryDate: testCardExpiry,
+              cvv: testCardCVV,
+              cardholderName: 'Test User'
+            }
+          };
+          
+          console.log('Proceeding with live ticket purchase...');
+          const result = await bookingService.bookTickets(liveTestInput);
+          
+          expect(result).toBeDefined();
+          expect(typeof result.success).toBe('boolean');
+          
+          if (result.success) {
+            console.log(`🎫 LIVE PURCHASE COMPLETED SUCCESSFULLY!`);
+            console.log(`Confirmation Number: ${result.confirmationNumber || 'N/A'}`);
+            console.log(`Total Price: ${result.bookingDetails?.totalPrice || 'N/A'}`);
+            console.log(`Seats Booked: ${result.bookingDetails?.seats?.join(', ') || 'N/A'}`);
+            
+            // In a real scenario, you might want to immediately cancel this booking
+            // to avoid charges, or use a test payment method
+            console.log('⚠️  IMPORTANT: This is a real purchase. Consider canceling if this was unintended.');
+          } else {
+            console.log(`Live purchase failed: ${result.errorMessage || 'Unknown error'}`);
+            // This might be expected if test data is invalid
+          }
         }
         
         // Clean up any sessions created during testing
@@ -188,11 +289,17 @@ describe('Playwright Booking Integration Tests', () => {
         }
         
       } catch (error) {
-        console.log(`Dry run encountered error: ${(error as Error).message}`);
+        console.log(`${testMode} encountered error: ${(error as Error).message}`);
+        
+        if (!isDryRun) {
+          // In live mode, errors are more critical
+          console.log('Live purchase error - this may indicate an issue with the booking flow');
+        }
+        
         // Don't fail the test - this might be expected
         expect(true).toBe(true);
       }
-    }, 120000); // 2 minutes for full flow
+    }, 180000); // 3 minutes for full flow (live purchase takes longer)
   });
 
   describe('Session Management', () => {
@@ -307,5 +414,70 @@ describe('Playwright Booking Integration Tests', () => {
         await page!.close();
       }
     }, 10000);
+  });
+
+  describe('Browser Launch Test', () => {
+    it('should launch browser in visible mode for A-List testing', async () => {
+      console.log('🎬 ========================================');
+      console.log('🎬 BROWSER LAUNCH TEST STARTING');
+      console.log('🎬 ========================================');
+      
+      if (!testEmail || !testPassword) {
+        console.warn('AMC_TEST_EMAIL or AMC_TEST_PASSWORD not set - skipping test');
+        return;
+      }
+
+      console.log('🎬 Testing browser launch in visible mode...');
+      console.log('🎬 Browser service initialized:', !!bookingService);
+      console.log('🎬 Browser object exists:', !!bookingService?.['browser']);
+      
+      if (!bookingService) {
+        console.log('❌ Booking service is null!');
+        expect(bookingService).toBeDefined();
+        return;
+      }
+      
+      if (!bookingService['browser']) {
+        console.log('❌ Browser object is null!');
+        expect(bookingService['browser']).toBeDefined();
+        return;
+      }
+      
+      console.log('✅ Both service and browser exist, proceeding with test...');
+      
+      // Create a new page to test browser visibility
+      const page = await bookingService['browser']?.newPage();
+      expect(page).toBeDefined();
+      console.log('✅ Page created successfully');
+      
+      try {
+        console.log('🎬 Navigating to a simple page to test browser visibility...');
+        await page!.goto('https://www.google.com');
+        console.log('✅ Navigated to Google - browser should be visible now');
+        
+        // Wait a bit so user can see the browser
+        console.log('🎬 Waiting 10 seconds so you can see the browser window...');
+        console.log('🎬 Look for a Chromium browser window on your screen!');
+        await page!.waitForTimeout(10000);
+        
+        console.log('🎬 Browser test completed - did you see the browser window?');
+        
+        // Don't close the page immediately so user can see it
+        console.log('🎬 Keeping page open for 5 more seconds...');
+        await page!.waitForTimeout(5000);
+        
+      } catch (error) {
+        console.log(`Browser test encountered error: ${(error as Error).message}`);
+        expect(true).toBe(true);
+      } finally {
+        console.log('🎬 Closing test page...');
+        await page!.close();
+        console.log('✅ Test page closed');
+      }
+      
+      console.log('🎬 ========================================');
+      console.log('🎬 BROWSER LAUNCH TEST COMPLETED');
+      console.log('🎬 ========================================');
+    }, 30000);
   });
 }); 

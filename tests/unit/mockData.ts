@@ -16,31 +16,52 @@ import {
 export const mockMovies: AMCMovie[] = [
   {
     id: 'movie_001',
+    name: 'Dune: Part Two',
+    runTime: 166,
+    releaseDateUtc: '2024-03-01T00:00:00Z',
+    posterDynamic: 'https://example.com/dune2.jpg',
+    synopsis: 'Paul Atreides unites with Chani and the Fremen to lead the rebellion against the Emperor.',
+    mpaaRating: 'PG-13',
+    genre: 'Sci-Fi, Adventure, Drama',
+    // Keep old fields for backward compatibility
     title: 'Dune: Part Two',
     runtime: 166,
     releaseDate: '2024-03-01',
     posterUrl: 'https://example.com/dune2.jpg',
-    synopsis: 'Paul Atreides unites with Chani and the Fremen to lead the rebellion against the Emperor.',
     rating: 'PG-13',
     genres: ['Sci-Fi', 'Adventure', 'Drama']
   },
   {
     id: 'movie_002',
+    name: 'The Batman',
+    runTime: 176,
+    releaseDateUtc: '2024-03-04T00:00:00Z',
+    posterDynamic: 'https://example.com/batman.jpg',
+    synopsis: 'Batman ventures into Gotham City\'s underworld when a sadistic killer leaves behind a trail of cryptic clues.',
+    mpaaRating: 'PG-13',
+    genre: 'Action, Crime, Drama',
+    // Keep old fields for backward compatibility
     title: 'The Batman',
     runtime: 176,
     releaseDate: '2024-03-04',
     posterUrl: 'https://example.com/batman.jpg',
-    synopsis: 'Batman ventures into Gotham City\'s underworld when a sadistic killer leaves behind a trail of cryptic clues.',
     rating: 'PG-13',
     genres: ['Action', 'Crime', 'Drama']
   },
   {
     id: 'movie_003',
+    name: 'Spider-Man: No Way Home',
+    runTime: 148,
+    releaseDateUtc: '2024-03-08T00:00:00Z',
+    posterDynamic: 'https://example.com/spiderman.jpg',
+    synopsis: 'Spider-Man\'s identity is revealed and he asks Doctor Strange for help.',
+    mpaaRating: 'PG-13',
+    genre: 'Action, Adventure, Sci-Fi',
+    // Keep old fields for backward compatibility
     title: 'Spider-Man: No Way Home',
     runtime: 148,
     releaseDate: '2024-03-08',
     posterUrl: 'https://example.com/spiderman.jpg',
-    synopsis: 'Spider-Man\'s identity is revealed and he asks Doctor Strange for help.',
     rating: 'PG-13',
     genres: ['Action', 'Adventure', 'Sci-Fi']
   }

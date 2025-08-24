@@ -55,7 +55,7 @@ global.testUtils = {
     email: process.env.AMC_TEST_EMAIL || 'test@example.com',
     password: process.env.AMC_TEST_PASSWORD || 'testpassword',
     zip: process.env.AMC_TEST_ZIP || '10001',
-    apiKey: process.env.AMC_API_KEY || 'test_api_key'
+    apiKey: process.env.AMC_API_KEY || ''
   }),
   
   // Check if integration tests should run

@@ -5,13 +5,32 @@ An MCP (Model Context Protocol) server that integrates with AMC Theatres APIs to
 ## Features
 
 - **List Movies**: Get currently playing movies at AMC theaters
-- **Find Theaters**: Locate AMC theaters near a specific ZIP code
+- **Find Theaters**: Locate AMC theaters near a specific ZIP code using AMC's location-suggestions and locations APIs
 - **Showtimes**: Get showtimes for any theater on a specific date
 - **Ticket Reservations**: Stub implementation for future e-commerce integration
 - **Automated Ticket Booking**: **NEW!** Book tickets using Playwright browser automation
 - **MCP Compliant**: Follows Model Context Protocol best practices
 - **TypeScript**: Built with strict typing and modern ES2022 features
 - **Docker Ready**: Containerized for easy deployment
+
+## API Integration Details
+
+### Theater Location Search
+The server uses AMC's two-step API process for finding theaters by ZIP code:
+
+1. **Location Suggestions** (`/location-suggestions`): Converts ZIP codes to geographic coordinates
+2. **Locations** (`/locations`): Finds theaters near those coordinates with distance rankings
+
+This approach provides more accurate results than simple ZIP code matching and includes:
+- Distance calculations from the search location
+- Theater amenities and features
+- Contact information and addresses
+- Rich theater metadata (IMAX, Dolby, reserved seating, etc.)
+
+### Available Endpoints
+- `GET /location-suggestions?query={zip}` - Get coordinates for a ZIP code
+- `GET /locations?latitude={lat}&longitude={lng}` - Find theaters near coordinates
+- `GET /theatres` - Direct theater search (fallback)
 
 ## Prerequisites
 
@@ -98,6 +117,30 @@ curl -X POST http://localhost:3000/tools/list_showtimes \
   -H "Content-Type: application/json" \
   -d '{"theaterId": "123", "date": "2024-01-15"}'
 ```
+
+## Testing the Location API
+
+### Test Location-Suggestions API
+```bash
+# Test the location-suggestions endpoint directly
+curl "https://api.amctheatres.com/v2/location-suggestions?query=90210&page-size=10&page-number=1" \
+  -H "X-AMC-Vendor-Key: $AMC_API_KEY"
+```
+
+### Test Locations API
+```bash
+# Test the locations endpoint with coordinates (example: Beverly Hills, CA)
+curl "https://api.amctheatres.com/v2/locations?latitude=34.06196976&longitude=-118.44154358&page-size=10&page-number=1" \
+  -H "X-AMC-Vendor-Key: $AMC_API_KEY"
+```
+
+### Run the Test Script
+```bash
+# Test the full workflow (ZIP -> coordinates -> theaters)
+node test-location-api.js
+```
+
+**Note**: Make sure your `AMC_API_KEY` environment variable is set before running the test script.
 
 ### Book Tickets (NEW!)
 ```bash

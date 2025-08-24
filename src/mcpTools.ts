@@ -109,13 +109,13 @@ export class MCPTools {
       return {
         movies: movies.map(movie => ({
           id: movie.id,
-          title: movie.title,
-          runtime: movie.runtime,
-          releaseDate: movie.releaseDate,
-          posterUrl: movie.posterUrl,
+          title: movie.name || movie.title || 'Untitled', // Use AMC's 'name' field with fallback
+          runtime: movie.runTime || movie.runtime || 0, // Use AMC's 'runTime' field with fallback
+          releaseDate: movie.releaseDateUtc || movie.releaseDate || 'Unknown', // Use AMC's 'releaseDateUtc' field with fallback
+          posterUrl: movie.posterDynamic || movie.posterUrl, // Use AMC's 'posterDynamic' field
           synopsis: movie.synopsis,
-          rating: movie.rating,
-          genres: movie.genres
+          rating: movie.mpaaRating || movie.rating, // Use AMC's 'mpaaRating' field
+          genres: movie.genre ? [movie.genre] : movie.genres || [] // Convert AMC's 'genre' to array with fallback
         })),
         totalCount: movies.length
       };
@@ -154,13 +154,13 @@ export class MCPTools {
         showtimes: showtimes.map(showtime => ({
           id: showtime.id,
           movieId: showtime.movieId,
-          movieTitle: showtime.movieTitle,
-          startDateTime: showtime.startDateTime,
-          endDateTime: showtime.endDateTime,
-          auditorium: showtime.auditorium,
-          format: showtime.format,
-          ticketPrice: showtime.ticketPrice,
-          availableSeats: showtime.availableSeats
+          movieTitle: showtime.movieName,
+          startDateTime: showtime.showDateTimeUtc,
+          endDateTime: showtime.sellUntilDateTimeUtc,
+          auditorium: showtime.auditorium.toString(),
+          format: showtime.premiumFormat,
+          ticketPrice: showtime.ticketPrices?.[0]?.price,
+          availableSeats: undefined // AMC API doesn't provide available seats count
         })),
         totalCount: showtimes.length,
         theater: {
